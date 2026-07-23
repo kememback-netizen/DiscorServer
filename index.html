@@ -26,10 +26,11 @@
                 <span>DiscorServer</span>
                 <i class="fas fa-chevron-down"></i>
             </div>
-            <div class="channel-category">Text channels</div>
+            <div class="channel-category">Canais de texto</div>
             <div class="channel active" data-channel="geral"><i class="fas fa-hashtag"></i> geral</div>
             <div class="channel" data-channel="anuncios"><i class="fas fa-bullhorn"></i> anúncios</div>
-            <div class="channel-category">Voz</div>
+            <div class="channel" data-channel="random"><i class="fas fa-dice"></i> random</div>
+            <div class="channel-category">Canais de voz</div>
             <div class="channel" data-channel="sala1"><i class="fas fa-volume-up"></i> Sala 1</div>
             <div class="channel" data-channel="sala2"><i class="fas fa-microphone"></i> Sala 2</div>
         </nav>
@@ -41,6 +42,7 @@
                 <div class="channel-info">
                     <i class="fas fa-hashtag"></i>
                     <span id="currentChannel">geral</span>
+                    <span id="memberCount" style="font-size: 13px; color: #888; margin-left: 8px;">👥 3 online</span>
                 </div>
                 <div class="header-actions">
                     <button id="shareScreenBtn" class="share-btn"><i class="fas fa-desktop"></i> Compartilhar</button>
@@ -51,14 +53,7 @@
 
             <!-- Mensagens -->
             <div class="messages" id="messageContainer">
-                <div class="message">
-                    <div class="avatar" id="mainAvatar" style="background: #b31b1b;">D</div>
-                    <div class="msg-content">
-                        <span class="username" id="mainUsername">DiscorServer <span class="badge">ADM</span></span>
-                        <span class="timestamp">hoje</span>
-                        <p>Bem-vindo ao DiscorServer! 🚀</p>
-                    </div>
-                </div>
+                <!-- As mensagens serão carregadas via JavaScript -->
             </div>
 
             <!-- Input -->
@@ -96,6 +91,10 @@
                         <div class="avatar" style="background: #b31b1b;">D</div>
                         <span>Discor</span>
                     </div>
+                    <div class="call-user">
+                        <div class="avatar" style="background: #2a6b2a;">J</div>
+                        <span>João</span>
+                    </div>
                 </div>
                 <div class="call-controls">
                     <button id="muteMicBtn"><i class="fas fa-microphone"></i></button>
@@ -125,14 +124,18 @@
                     <div class="profile-avatar-section">
                         <div class="profile-avatar-preview" id="profileAvatarPreview" style="background: #b31b1b;">D</div>
                         <div class="profile-avatar-options">
-                            <label for="avatarEmoji" class="avatar-label">
-                                <i class="fas fa-smile"></i> Emoji
-                                <input type="text" id="avatarEmoji" maxlength="2" placeholder="👤" style="width: 50px; text-align: center; font-size: 24px;" />
-                            </label>
-                            <label for="avatarColor" class="avatar-label">
-                                <i class="fas fa-palette"></i> Cor
-                                <input type="color" id="avatarColor" value="#b31b1b" style="width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;" />
-                            </label>
+                            <div class="avatar-option">
+                                <label><i class="fas fa-smile"></i> Emoji</label>
+                                <input type="text" id="avatarEmoji" maxlength="2" placeholder="👤" style="width: 60px; text-align: center; font-size: 28px;" />
+                            </div>
+                            <div class="avatar-option">
+                                <label><i class="fas fa-palette"></i> Cor</label>
+                                <input type="color" id="avatarColor" value="#b31b1b" style="width: 50px; height: 40px; border-radius: 8px; border: none; cursor: pointer;" />
+                            </div>
+                            <div class="avatar-option">
+                                <label><i class="fas fa-image"></i> URL da Foto</label>
+                                <input type="text" id="avatarUrl" placeholder="https://exemplo.com/foto.jpg" style="width: 180px;" />
+                            </div>
                         </div>
                     </div>
                     <div class="profile-field">
