@@ -1,4 +1,10 @@
-// ====== Múltiplos idiomas ======
+// ====== BROADCAST CHANNEL ======
+const channel = new BroadcastChannel('discorserver_chat');
+let myUsername = '';
+let myAvatar = '👤';
+let myColor = '#b31b1b';
+
+// ====== MÚLTIPLOS IDIOMAS ======
 const locales = {
     pt: {
         channel: 'Canal',
@@ -15,7 +21,9 @@ const locales = {
         system: 'Sistema',
         enterCall: 'Entrar na Call',
         leaveCall: 'Sair da Call',
-        inCall: 'Em chamada'
+        inCall: 'Em chamada',
+        joined: 'entrou no servidor',
+        left: 'saiu do servidor'
     },
     en: {
         channel: 'Channel',
@@ -32,7 +40,9 @@ const locales = {
         system: 'System',
         enterCall: 'Join Call',
         leaveCall: 'Leave Call',
-        inCall: 'In call'
+        inCall: 'In call',
+        joined: 'joined the server',
+        left: 'left the server'
     },
     es: {
         channel: 'Canal',
@@ -49,7 +59,9 @@ const locales = {
         system: 'Sistema',
         enterCall: 'Unirse a llamada',
         leaveCall: 'Salir de llamada',
-        inCall: 'En llamada'
+        inCall: 'En llamada',
+        joined: 'se unió al servidor',
+        left: 'salió del servidor'
     },
     fr: {
         channel: 'Canal',
@@ -66,7 +78,9 @@ const locales = {
         system: 'Système',
         enterCall: 'Rejoindre l\'appel',
         leaveCall: 'Quitter l\'appel',
-        inCall: 'En appel'
+        inCall: 'En appel',
+        joined: 'a rejoint le serveur',
+        left: 'a quitté le serveur'
     }
 };
 
@@ -80,29 +94,74 @@ function setLanguage(lang) {
 }
 
 function applyLanguage() {
-    const t = translations;
     document.getElementById('langLabel').textContent = currentLang.toUpperCase();
-    document.getElementById('msgInput').placeholder = t.msgPlaceholder || 'Mensagem...';
+    document.getElementById('msgInput').placeholder = translations.msgPlaceholder || 'Mensagem...';
     document.getElementById('audioTimer').textContent = '00:00';
+    updateCallButtonText();
 }
 
-// ====== PERFIL COM localStorage ======
+// ====== TELA DE LOGIN ======
+const loginOverlay = document.getElementById('loginOverlay');
+const loginUsername = document.getElementById('loginUsername');
+const loginAvatar = document.getElementById('loginAvatar');
+const loginColor = document.getElementById('loginColor');
+const loginAvatarPreview = document.getElementById('loginAvatarPreview');
+const loginBtn = document.getElementById('loginBtn');
+
+// Atualiza preview do avatar no login
+loginAvatar.addEventListener('input', () => {
+    loginAvatarPreview.textContent = loginAvatar.value || '👤';
+});
+loginColor.addEventListener('input', () => {
+    loginAvatarPreview.style.background = loginColor.value;
+});
+
+// Atualiza cor inicial
+loginColor.addEventListener('input', () => {
+    loginAvatarPreview.style.background = loginColor.value;
+});
+
+loginBtn.addEventListener('click', () => {
+    const name = loginUsername.value.trim();
+    if (!name) {
+        loginUsername.style.borderColor = '#ff4444';
+        loginUsername.placeholder = 'Digite seu nome!';
+        return;
+    }
+    myUsername = name;
+    myAvatar = loginAvatar.value || '👤';
+    myColor = loginColor.value || '#b31b1b';
+    
+    loginOverlay.classList.add('hidden');
+    document.getElementById('app').style.display = 'flex';
+    
+    // Inicializa app
+    initApp();
+    
+    // Anuncia entrada
+    broadcastMessage({
+        type: 'system',
+        text: `${myUsername} ${translations.joined || 'entrou no servidor'}`,
+        username: 'Sistema',
+        avatar: '👋'
+    });
+});
+
+loginUsername.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') loginBtn.click();
+    loginUsername.style.borderColor = '#2a2a2a';
+});
+
+// ====== PERFIL ======
 let profileData = {
-    username: 'DiscorServer',
-    avatar: 'D',
+    username: '',
+    avatar: '👤',
     avatarColor: '#b31b1b',
     avatarUrl: '',
     status: 'online',
     bio: '',
     animated: true,
-    decorations: {
-        glow: false,
-        pulse: false,
-        border: false,
-        rainbow: false,
-        crown: false,
-        sparkle: false
-    }
+    decorations: { glow: false, pulse: false, border: false, rainbow: false, crown: false, sparkle: false }
 };
 
 function loadProfile() {
@@ -114,10 +173,12 @@ function loadProfile() {
             if (!profileData.decorations) {
                 profileData.decorations = { glow: false, pulse: false, border: false, rainbow: false, crown: false, sparkle: false };
             }
-        } catch (e) {
-            console.error('Erro ao carregar perfil:', e);
-        }
+        } catch (e) {}
     }
+    // Usa dados do login
+    profileData.username = myUsername;
+    profileData.avatar = myAvatar;
+    profileData.avatarColor = myColor;
     updateProfileUI();
 }
 
@@ -130,7 +191,6 @@ function updateProfileUI() {
     const mainUsername = document.getElementById('mainUsername');
     const profileAvatarPreview = document.getElementById('profileAvatarPreview');
     
-    // Avatar
     if (profileData.avatarUrl && profileData.avatarUrl.trim() !== '') {
         mainAvatar.innerHTML = `<img src="${profileData.avatarUrl}" class="avatar-img" alt="avatar" />`;
         mainAvatar.style.background = 'transparent';
@@ -140,10 +200,8 @@ function updateProfileUI() {
         mainAvatar.style.color = '#fff';
     }
     
-    // Nome
     mainUsername.innerHTML = `${profileData.username} <span class="badge">${getStatusText()}</span>`;
     
-    // Preview modal
     if (profileData.avatarUrl && profileData.avatarUrl.trim() !== '') {
         profileAvatarPreview.innerHTML = `<img src="${profileData.avatarUrl}" alt="avatar" />`;
         profileAvatarPreview.style.background = 'transparent';
@@ -153,7 +211,6 @@ function updateProfileUI() {
         profileAvatarPreview.style.color = '#fff';
     }
     
-    // Animações
     if (profileData.animated) {
         mainAvatar.classList.add('animated-avatar');
         profileAvatarPreview.classList.add('animated');
@@ -162,17 +219,13 @@ function updateProfileUI() {
         profileAvatarPreview.classList.remove('animated');
     }
     
-    // Decorações
     applyDecorations(mainAvatar);
-    
     updateMemberCount();
 }
 
 function applyDecorations(element) {
     const dec = profileData.decorations;
-    // Remove todas as classes de decoração
     element.classList.remove('decoration-glow', 'decoration-pulse', 'decoration-border', 'decoration-rainbow', 'decoration-crown', 'decoration-sparkle');
-    
     if (dec.glow) element.classList.add('decoration-glow');
     if (dec.pulse) element.classList.add('decoration-pulse');
     if (dec.border) element.classList.add('decoration-border');
@@ -192,119 +245,140 @@ function getStatusText() {
 }
 
 function getStatusEmoji(status) {
-    const map = {
-        online: '🟢',
-        idle: '🟡',
-        dnd: '🔴',
-        offline: '⚫'
-    };
+    const map = { online: '🟢', idle: '🟡', dnd: '🔴', offline: '⚫' };
     return map[status] || '🟢';
 }
 
-// ====== CHAT GLOBAL ======
-let messages = [];
-const MAX_MESSAGES = 100;
-
-function loadMessages() {
-    const saved = localStorage.getItem('discorserver_messages');
-    if (saved) {
-        try {
-            messages = JSON.parse(saved);
-            if (!Array.isArray(messages)) messages = [];
-            if (messages.length > MAX_MESSAGES) messages = messages.slice(-MAX_MESSAGES);
-        } catch (e) {
-            messages = [];
-        }
-    }
-    renderMessages();
-}
-
-function saveMessages() {
-    if (messages.length > MAX_MESSAGES) messages = messages.slice(-MAX_MESSAGES);
-    localStorage.setItem('discorserver_messages', JSON.stringify(messages));
-}
-
-function addMessage(text, username = 'Você', avatar = '👤', isAnimated = false, isAudio = false, isSystem = false) {
-    const message = {
-        id: Date.now() + '_' + Math.random().toString(36).substr(2, 5),
-        text: text,
-        username: username,
-        avatar: avatar,
-        avatarColor: profileData.avatarColor || '#b31b1b',
-        avatarUrl: profileData.avatarUrl || '',
-        isAnimated: isAnimated,
-        isAudio: isAudio,
-        isSystem: isSystem,
-        timestamp: new Date().toISOString(),
-        status: profileData.status || 'online'
-    };
-    messages.push(message);
-    if (messages.length > MAX_MESSAGES) messages = messages.slice(-MAX_MESSAGES);
-    saveMessages();
-    renderMessages();
-}
-
-function renderMessages() {
-    const container = document.getElementById('messageContainer');
-    container.innerHTML = '';
-    
-    if (messages.length === 0) {
-        const t = translations;
-        container.innerHTML = `
-            <div class="message system">
-                <div class="msg-content" style="text-align:center;width:100%;">
-                    <p style="color:#888;font-style:italic;">${t.welcome || 'Bem-vindo ao DiscorServer! 🚀'}</p>
-                    <p style="color:#555;font-size:12px;">As mensagens são salvas automaticamente</p>
-                </div>
-            </div>
-        `;
-        return;
-    }
-    
-    messages.forEach(msg => {
-        const div = document.createElement('div');
-        div.className = `message ${msg.isSystem ? 'system' : ''}`;
-        
-        let avatarHtml = '';
-        if (msg.avatarUrl && msg.avatarUrl.trim() !== '') {
-            avatarHtml = `<img src="${msg.avatarUrl}" class="avatar-img" alt="avatar" />`;
-        } else {
-            avatarHtml = msg.avatar || '👤';
-        }
-        
-        const avatarClass = msg.isAnimated ? 'avatar animated-avatar' : 'avatar';
-        const timestamp = new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-        
-        let contentHtml = '';
-        if (msg.isAudio) {
-            contentHtml = `<audio controls src="${msg.text}" style="max-width: 300px; border-radius: 20px;"></audio>`;
-        } else {
-            contentHtml = `<p>${msg.text}</p>`;
-        }
-        
-        div.innerHTML = `
-            <div class="${avatarClass}" style="background: ${msg.avatarUrl ? 'transparent' : (msg.avatarColor || '#2a2a2a')};">
-                ${avatarHtml}
-            </div>
-            <div class="msg-content">
-                <span class="username">
-                    ${msg.username}
-                    <span class="badge">${getStatusEmoji(msg.status)}</span>
-                </span>
-                <span class="timestamp">${timestamp}</span>
-                ${contentHtml}
-            </div>
-        `;
-        container.appendChild(div);
+// ====== BROADCAST ======
+function broadcastMessage(data) {
+    channel.postMessage({
+        ...data,
+        sender: myUsername,
+        timestamp: new Date().toISOString()
     });
-    container.scrollTop = container.scrollHeight;
 }
 
-function updateMemberCount() {
-    const baseMembers = 3;
-    const extra = Math.min(Math.floor(messages.length / 10), 10);
-    const total = baseMembers + extra;
-    document.getElementById('memberCount').textContent = `👥 ${total} online`;
+// Recebe mensagens de outras abas/janelas
+channel.onmessage = (event) => {
+    const data = event.data;
+    
+    // Ignora próprias mensagens
+    if (data.sender === myUsername && data.type !== 'system') return;
+    
+    if (data.type === 'message') {
+        renderMessage({
+            text: data.text,
+            username: data.username,
+            avatar: data.avatar,
+            avatarColor: data.avatarColor,
+            avatarUrl: data.avatarUrl || '',
+            isAnimated: data.isAnimated || false,
+            isAudio: data.isAudio || false,
+            isSystem: false,
+            timestamp: data.timestamp || new Date().toISOString(),
+            status: data.status || 'online'
+        });
+    } else if (data.type === 'system') {
+        renderMessage({
+            text: data.text,
+            username: 'Sistema',
+            avatar: data.avatar || '📢',
+            isSystem: true,
+            timestamp: data.timestamp || new Date().toISOString()
+        });
+    } else if (data.type === 'user_joined') {
+        updateOnlineUsers();
+    } else if (data.type === 'user_left') {
+        updateOnlineUsers();
+    }
+};
+
+// ====== RENDER MENSAGENS ======
+let messageHistory = [];
+
+function renderMessage(msg) {
+    const container = document.getElementById('messageContainer');
+    
+    // Remove mensagem de boas-vindas se existir
+    const welcomeMsg = container.querySelector('.welcome-msg');
+    if (welcomeMsg) welcomeMsg.remove();
+    
+    const div = document.createElement('div');
+    div.className = `message ${msg.isSystem ? 'system' : ''}`;
+    
+    let avatarHtml = '';
+    if (msg.avatarUrl && msg.avatarUrl.trim() !== '') {
+        avatarHtml = `<img src="${msg.avatarUrl}" class="avatar-img" alt="avatar" />`;
+    } else {
+        avatarHtml = msg.avatar || '👤';
+    }
+    
+    const avatarClass = msg.isAnimated ? 'avatar animated-avatar' : 'avatar';
+    const timestamp = new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+    
+    let contentHtml = '';
+    if (msg.isAudio) {
+        contentHtml = `<audio controls src="${msg.text}" style="max-width: 300px; border-radius: 20px;"></audio>`;
+    } else {
+        contentHtml = `<p>${msg.text}</p>`;
+    }
+    
+    div.innerHTML = `
+        <div class="${avatarClass}" style="background: ${msg.avatarUrl ? 'transparent' : (msg.avatarColor || '#2a2a2a')};">
+            ${avatarHtml}
+        </div>
+        <div class="msg-content">
+            <span class="username">
+                ${msg.username}
+                ${!msg.isSystem ? `<span class="badge">${getStatusEmoji(msg.status)}</span>` : ''}
+            </span>
+            <span class="timestamp">${timestamp}</span>
+            ${contentHtml}
+        </div>
+    `;
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    
+    // Salva no histórico
+    messageHistory.push(msg);
+    if (messageHistory.length > 100) messageHistory.shift();
+}
+
+// ====== ENVIAR MENSAGEM ======
+function sendMessage(text, isAudio = false) {
+    const msgData = {
+        type: 'message',
+        text: text,
+        username: profileData.username,
+        avatar: profileData.avatar,
+        avatarColor: profileData.avatarColor,
+        avatarUrl: profileData.avatarUrl || '',
+        isAnimated: profileData.animated,
+        isAudio: isAudio,
+        status: profileData.status
+    };
+    
+    // Envia via Broadcast
+    broadcastMessage(msgData);
+    
+    // Renderiza localmente
+    renderMessage({
+        ...msgData,
+        timestamp: new Date().toISOString()
+    });
+}
+
+// ====== ONLINE USERS ======
+let onlineUsers = new Set();
+
+function updateOnlineUsers() {
+    // Simples: cada aba é um usuário
+    // Na prática, usaríamos um servidor, mas para demo usamos BroadcastChannel
+    const users = new Set();
+    users.add(myUsername);
+    // Adiciona usuários de outras abas via mensagens
+    document.getElementById('onlineUsers').textContent = `👥 ${users.size} online`;
+    document.getElementById('memberCount').textContent = `👥 ${users.size} online`;
 }
 
 // ====== MODAL DE PERFIL ======
@@ -322,7 +396,6 @@ function openProfileModal() {
     document.getElementById('profileBio').value = profileData.bio || '';
     document.getElementById('profileAnimated').checked = profileData.animated !== false;
     
-    // Decorações
     const dec = profileData.decorations;
     document.getElementById('decorationGlow').checked = dec.glow || false;
     document.getElementById('decorationPulse').checked = dec.pulse || false;
@@ -351,7 +424,6 @@ function updateProfilePreview() {
     }
 }
 
-// Upload de foto
 document.getElementById('avatarFile').addEventListener('change', function(e) {
     const file = this.files[0];
     if (file) {
@@ -382,7 +454,7 @@ profileModal.addEventListener('click', (e) => {
 saveProfileBtn.addEventListener('click', function() {
     const oldUsername = profileData.username;
     
-    profileData.username = document.getElementById('profileUsername').value.trim() || 'Usuário';
+    profileData.username = document.getElementById('profileUsername').value.trim() || profileData.username;
     profileData.avatar = document.getElementById('avatarEmoji').value || '👤';
     profileData.avatarColor = document.getElementById('avatarColor').value || '#b31b1b';
     profileData.avatarUrl = document.getElementById('avatarUrl').value.trim();
@@ -390,7 +462,6 @@ saveProfileBtn.addEventListener('click', function() {
     profileData.bio = document.getElementById('profileBio').value;
     profileData.animated = document.getElementById('profileAnimated').checked;
     
-    // Decorações
     profileData.decorations = {
         glow: document.getElementById('decorationGlow').checked,
         pulse: document.getElementById('decorationPulse').checked,
@@ -404,9 +475,17 @@ saveProfileBtn.addEventListener('click', function() {
     updateProfileUI();
     
     if (oldUsername !== profileData.username) {
-        addMessage(`${oldUsername} mudou o nome para ${profileData.username}`, 'Sistema', '⚙️', false, false, true);
+        broadcastMessage({
+            type: 'system',
+            text: `${oldUsername} mudou o nome para ${profileData.username}`,
+            avatar: '✏️'
+        });
     } else {
-        addMessage(`Perfil atualizado com novas decorações! ✨`, 'Sistema', '🎨', false, false, true);
+        broadcastMessage({
+            type: 'system',
+            text: `${profileData.username} atualizou o perfil! ✨`,
+            avatar: '🎨'
+        });
     }
     
     closeProfileModal();
@@ -419,7 +498,7 @@ const sendBtn = document.getElementById('sendBtn');
 sendBtn.addEventListener('click', () => {
     const text = msgInput.value.trim();
     if (text) {
-        addMessage(text, profileData.username, profileData.avatar, profileData.animated);
+        sendMessage(text);
         msgInput.value = '';
     }
 });
@@ -436,12 +515,15 @@ document.querySelectorAll('.channel').forEach(ch => {
         const name = this.dataset.channel || this.textContent.trim();
         document.getElementById('currentChannel').textContent = name;
         
-        // Se for canal de voz, atualiza info da call
         if (this.classList.contains('voice-channel')) {
             document.getElementById('callChannel').textContent = `#${name}`;
         }
         
-        addMessage(`Entrou no canal #${name}`, 'Sistema', '🔔', false, false, true);
+        broadcastMessage({
+            type: 'system',
+            text: `${profileData.username} entrou no canal #${name}`,
+            avatar: '🔔'
+        });
     });
 });
 
@@ -517,7 +599,7 @@ stopRecordBtn.addEventListener('click', () => {
 
 sendAudioBtn.addEventListener('click', () => {
     if (audioPreview.src && audioPreview.src !== '') {
-        addMessage(audioPreview.src, profileData.username, profileData.avatar, profileData.animated, true);
+        sendMessage(audioPreview.src, true);
         audioPreview.style.display = 'none';
         audioPreview.src = '';
         sendAudioBtn.disabled = true;
@@ -566,7 +648,11 @@ shareScreenBtn.addEventListener('click', async function() {
         screenSharePanel.style.display = 'block';
         shareScreenBtn.classList.add('active');
         shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Compartilhando';
-        addMessage('Começou a compartilhar a tela', profileData.username, profileData.avatar, profileData.animated);
+        broadcastMessage({
+            type: 'system',
+            text: `${profileData.username} está compartilhando a tela`,
+            avatar: '🖥️'
+        });
         
         screenStream.getVideoTracks()[0].onended = () => {
             stopScreenShare();
@@ -587,15 +673,18 @@ function stopScreenShare() {
     screenSharePanel.style.display = 'none';
     shareScreenBtn.classList.remove('active');
     shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Compartilhar';
-    addMessage('Parou de compartilhar a tela', 'Sistema', '🖥️', false, false, true);
+    broadcastMessage({
+        type: 'system',
+        text: `${profileData.username} parou de compartilhar a tela`,
+        avatar: '🖥️'
+    });
 }
 
 stopShareBtn.addEventListener('click', stopScreenShare);
 
-// ====== CALL DE VOZ (WebRTC SIMULADO) ======
+// ====== CALL DE VOZ ======
 let callActive = false;
 let localStream = null;
-let peerConnections = [];
 let isMuted = false;
 let isDeafened = false;
 
@@ -609,11 +698,7 @@ const videoBtn = document.getElementById('videoBtn');
 const screenShareCallBtn = document.getElementById('screenShareCallBtn');
 const callUsersContainer = document.getElementById('callUsersContainer');
 
-// Usuários simulados na call
-let callUsers = [
-    { id: 'user1', name: 'João', avatar: 'J', color: '#2a6b2a', status: 'online' },
-    { id: 'user2', name: 'Maria', avatar: 'M', color: '#6b2a6b', status: 'online' }
-];
+let callUsers = [];
 
 function updateCallUsers() {
     callUsersContainer.innerHTML = '';
@@ -624,7 +709,7 @@ function updateCallUsers() {
     localDiv.id = 'localUser';
     localDiv.innerHTML = `
         <div class="avatar-container">
-            <div class="avatar" id="callerAvatar" style="background: ${profileData.avatarColor};">
+            <div class="avatar" style="background: ${profileData.avatarColor};">
                 ${profileData.avatar}
             </div>
             <div class="speaking-indicator active"></div>
@@ -634,33 +719,53 @@ function updateCallUsers() {
     `;
     callUsersContainer.appendChild(localDiv);
     
-    // Usuários remotos
-    callUsers.forEach(user => {
-        const div = document.createElement('div');
-        div.className = 'call-user';
-        div.innerHTML = `
-            <div class="avatar-container">
-                <div class="avatar" style="background: ${user.color};">
-                    ${user.avatar}
+    // Usuários remotos (simulados)
+    const remoteUsers = ['João', 'Maria', 'Pedro'];
+    remoteUsers.forEach(name => {
+        if (name !== profileData.username) {
+            const div = document.createElement('div');
+            div.className = 'call-user';
+            div.innerHTML = `
+                <div class="avatar-container">
+                    <div class="avatar" style="background: #${Math.floor(Math.random()*16777215).toString(16).padStart(6, '0')};">
+                        ${name[0]}
+                    </div>
+                    <div class="speaking-indicator"></div>
                 </div>
-                <div class="speaking-indicator"></div>
-            </div>
-            <span class="call-username">${user.name}</span>
-            <span class="call-status">🟢</span>
-        `;
-        callUsersContainer.appendChild(div);
+                <span class="call-username">${name}</span>
+                <span class="call-status">🟢</span>
+            `;
+            callUsersContainer.appendChild(div);
+        }
     });
+    
+    // Simula indicadores de fala
+    setInterval(() => {
+        document.querySelectorAll('.speaking-indicator').forEach((ind) => {
+            if (Math.random() > 0.4) {
+                ind.classList.add('active');
+            } else {
+                ind.classList.remove('active');
+            }
+        });
+    }, 2000);
+}
+
+function updateCallButtonText() {
+    if (callActive) {
+        callBtn.innerHTML = `<i class="fas fa-phone"></i> ${translations.inCall || 'Em chamada'}`;
+    } else {
+        callBtn.innerHTML = `<i class="fas fa-phone"></i> ${translations.enterCall || 'Entrar na Call'}`;
+    }
 }
 
 callBtn.addEventListener('click', async function() {
     if (callActive) {
-        // Sai da call
         leaveCall();
         return;
     }
     
     try {
-        // Pede acesso ao microfone
         localStream = await navigator.mediaDevices.getUserMedia({ 
             audio: true,
             video: false 
@@ -669,34 +774,15 @@ callBtn.addEventListener('click', async function() {
         callActive = true;
         callPanel.classList.add('active');
         callBtn.classList.add('in-call');
-        callBtn.innerHTML = `<i class="fas fa-phone"></i> ${translations.inCall || 'Em chamada'}`;
+        updateCallButtonText();
         
-        addMessage(`Entrou na chamada de voz`, 'Sistema', '📞', false, false, true);
-        
-        // Simula outros usuários entrando
-        setTimeout(() => {
-            addMessage('João entrou na chamada', 'Sistema', '📞', false, false, true);
-            updateCallUsers();
-        }, 1000);
-        
-        setTimeout(() => {
-            addMessage('Maria entrou na chamada', 'Sistema', '📞', false, false, true);
-            updateCallUsers();
-        }, 2000);
+        broadcastMessage({
+            type: 'system',
+            text: `${profileData.username} entrou na chamada de voz`,
+            avatar: '📞'
+        });
         
         updateCallUsers();
-        
-        // Simula detecção de voz (ativa o indicador)
-        setInterval(() => {
-            const indicators = document.querySelectorAll('.speaking-indicator');
-            indicators.forEach((ind, index) => {
-                if (Math.random() > 0.5) {
-                    ind.classList.add('active');
-                } else {
-                    ind.classList.remove('active');
-                }
-            });
-        }, 2000);
         
     } catch (err) {
         console.error('Erro ao acessar microfone:', err);
@@ -708,20 +794,23 @@ function leaveCall() {
     callActive = false;
     callPanel.classList.remove('active');
     callBtn.classList.remove('in-call');
-    callBtn.innerHTML = `<i class="fas fa-phone"></i> ${translations.enterCall || 'Entrar na Call'}`;
+    updateCallButtonText();
     
     if (localStream) {
         localStream.getTracks().forEach(track => track.stop());
         localStream = null;
     }
     
-    addMessage('Saiu da chamada de voz', 'Sistema', '📞', false, false, true);
+    broadcastMessage({
+        type: 'system',
+        text: `${profileData.username} saiu da chamada de voz`,
+        avatar: '📞'
+    });
 }
 
 endCallBtn.addEventListener('click', leaveCall);
 leaveCallBtn.addEventListener('click', leaveCall);
 
-// Controles da chamada
 muteMicBtn.addEventListener('click', function() {
     isMuted = !isMuted;
     this.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
@@ -733,8 +822,6 @@ muteMicBtn.addEventListener('click', function() {
             track.enabled = !isMuted;
         });
     }
-    
-    addMessage(isMuted ? 'Microfone silenciado' : 'Microfone ativado', 'Sistema', '🎤', false, false, true);
 });
 
 deafenBtn.addEventListener('click', function() {
@@ -742,21 +829,12 @@ deafenBtn.addEventListener('click', function() {
     this.innerHTML = isDeafened ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
     this.classList.toggle('muted');
     this.classList.toggle('active');
-    
-    // Simula silenciar áudio de todos
-    const audioElements = document.querySelectorAll('audio');
-    audioElements.forEach(audio => {
-        audio.muted = isDeafened;
-    });
-    
-    addMessage(isDeafened ? 'Áudio silenciado' : 'Áudio ativado', 'Sistema', '🔇', false, false, true);
 });
 
 videoBtn.addEventListener('click', function() {
     this.innerHTML = this.innerHTML.includes('video') ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
     this.classList.toggle('muted');
     this.classList.toggle('active');
-    addMessage('Câmera alternada', 'Sistema', '📹', false, false, true);
 });
 
 screenShareCallBtn.addEventListener('click', function() {
@@ -776,22 +854,52 @@ document.getElementById('langBtn').addEventListener('click', () => {
 });
 
 // ====== INICIALIZAÇÃO ======
-function init() {
+function initApp() {
     setLanguage('pt');
     loadProfile();
-    loadMessages();
     updateMemberCount();
+    updateOnlineUsers();
     updateCallUsers();
+    updateCallButtonText();
     
+    // Mensagem de boas-vindas
     setTimeout(() => {
-        addMessage('João entrou no servidor', 'Sistema', '👋', false, false, true);
-    }, 1000);
+        const container = document.getElementById('messageContainer');
+        container.innerHTML = `
+            <div class="message system welcome-msg">
+                <div class="msg-content" style="text-align:center;width:100%;">
+                    <p style="color:#888;font-style:italic;">${translations.welcome || 'Bem-vindo ao DiscorServer! 🚀'}</p>
+                    <p style="color:#555;font-size:12px;">As mensagens são em tempo real entre todas as abas!</p>
+                </div>
+            </div>
+        `;
+    }, 100);
     
-    setTimeout(() => {
-        addMessage('Maria entrou no servidor', 'Sistema', '👋', false, false, true);
-    }, 2000);
-    
-    setInterval(updateMemberCount, 30000);
+    setInterval(updateOnlineUsers, 10000);
 }
 
-init();
+// Mostra app se já estiver logado (para recarregar)
+if (localStorage.getItem('discorserver_logged')) {
+    const saved = localStorage.getItem('discorserver_login_data');
+    if (saved) {
+        try {
+            const data = JSON.parse(saved);
+            myUsername = data.username;
+            myAvatar = data.avatar;
+            myColor = data.color;
+            loginOverlay.classList.add('hidden');
+            document.getElementById('app').style.display = 'flex';
+            initApp();
+        } catch (e) {}
+    }
+}
+
+// Salva dados de login
+loginBtn.addEventListener('click', () => {
+    localStorage.setItem('discorserver_logged', 'true');
+    localStorage.setItem('discorserver_login_data', JSON.stringify({
+        username: myUsername,
+        avatar: myAvatar,
+        color: myColor
+    }));
+});
