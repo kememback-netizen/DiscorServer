@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
     <title>DiscorServer</title>
     <link rel="stylesheet" href="styles.css" />
-    <!-- Font Awesome (ícones) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
 </head>
 <body>
@@ -18,6 +17,7 @@
             <div class="divider"></div>
             <div class="server-icon"><i class="fas fa-hashtag"></i></div>
             <div class="server-icon"><i class="fas fa-phone"></i></div>
+            <div class="server-icon" id="profileBtn"><i class="fas fa-user-circle"></i></div>
         </aside>
 
         <!-- Painel de canais -->
@@ -27,55 +27,61 @@
                 <i class="fas fa-chevron-down"></i>
             </div>
             <div class="channel-category">Text channels</div>
-            <div class="channel" data-channel="geral"><i class="fas fa-hashtag"></i> geral</div>
+            <div class="channel active" data-channel="geral"><i class="fas fa-hashtag"></i> geral</div>
             <div class="channel" data-channel="anuncios"><i class="fas fa-bullhorn"></i> anúncios</div>
             <div class="channel-category">Voz</div>
             <div class="channel" data-channel="sala1"><i class="fas fa-volume-up"></i> Sala 1</div>
             <div class="channel" data-channel="sala2"><i class="fas fa-microphone"></i> Sala 2</div>
         </nav>
 
-        <!-- Área principal (chat + call) -->
+        <!-- Área principal -->
         <main class="chat-area">
-            <!-- Cabeçalho do chat -->
+            <!-- Cabeçalho -->
             <header class="chat-header">
                 <div class="channel-info">
                     <i class="fas fa-hashtag"></i>
                     <span id="currentChannel">geral</span>
                 </div>
                 <div class="header-actions">
+                    <button id="shareScreenBtn" class="share-btn"><i class="fas fa-desktop"></i> Compartilhar</button>
                     <button id="callBtn" class="call-btn"><i class="fas fa-phone"></i> Call</button>
                     <button id="langBtn" class="lang-btn"><i class="fas fa-globe"></i> <span id="langLabel">PT</span></button>
                 </div>
             </header>
 
-            <!-- Mensagens do chat -->
+            <!-- Mensagens -->
             <div class="messages" id="messageContainer">
                 <div class="message">
-                    <div class="avatar" style="background: #b31b1b;">D</div>
+                    <div class="avatar" id="mainAvatar" style="background: #b31b1b;">D</div>
                     <div class="msg-content">
-                        <span class="username">DiscorServer <span class="badge">ADM</span></span>
+                        <span class="username" id="mainUsername">DiscorServer <span class="badge">ADM</span></span>
                         <span class="timestamp">hoje</span>
                         <p>Bem-vindo ao DiscorServer! 🚀</p>
                     </div>
                 </div>
-                <div class="message">
-                    <div class="avatar animated-avatar" style="background: #222;">👤</div>
-                    <div class="msg-content">
-                        <span class="username">PerfilAnimado <i class="fas fa-circle" style="color: #43b581; font-size: 10px;"></i></span>
-                        <span class="timestamp">agora</span>
-                        <p>Meu perfil é animado! ✨</p>
-                    </div>
-                </div>
             </div>
 
-            <!-- Input de mensagem -->
+            <!-- Input -->
             <div class="message-input">
-                <i class="fas fa-plus-circle"></i>
+                <i class="fas fa-plus-circle" id="attachBtn"></i>
                 <input type="text" id="msgInput" placeholder="Mensagem..." />
+                <button id="audioBtn" class="audio-btn"><i class="fas fa-microphone"></i></button>
                 <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
             </div>
 
-            <!-- Painel de chamada (call) -->
+            <!-- Áudio (gravador) -->
+            <div class="audio-recorder" id="audioRecorder" style="display: none;">
+                <div class="audio-controls">
+                    <button id="startRecordBtn"><i class="fas fa-circle" style="color: #ff4444;"></i> Gravar</button>
+                    <button id="stopRecordBtn" disabled><i class="fas fa-stop"></i> Parar</button>
+                    <button id="sendAudioBtn" disabled><i class="fas fa-paper-plane"></i> Enviar</button>
+                    <button id="cancelAudioBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="audio-timer" id="audioTimer">00:00</div>
+                <audio id="audioPreview" controls style="width: 100%; margin-top: 8px; display: none;"></audio>
+            </div>
+
+            <!-- Painel de chamada -->
             <div class="call-panel" id="callPanel">
                 <div class="call-header">
                     <span><i class="fas fa-phone"></i> Chamada ativa</span>
@@ -83,8 +89,8 @@
                 </div>
                 <div class="call-users">
                     <div class="call-user">
-                        <div class="avatar animated-avatar">🎤</div>
-                        <span>Você</span>
+                        <div class="avatar animated-avatar" id="callerAvatar">🎤</div>
+                        <span id="callerName">Você</span>
                     </div>
                     <div class="call-user">
                         <div class="avatar" style="background: #b31b1b;">D</div>
@@ -92,12 +98,71 @@
                     </div>
                 </div>
                 <div class="call-controls">
-                    <button><i class="fas fa-microphone"></i></button>
-                    <button><i class="fas fa-volume-up"></i></button>
-                    <button><i class="fas fa-video"></i></button>
+                    <button id="muteMicBtn"><i class="fas fa-microphone"></i></button>
+                    <button id="volumeBtn"><i class="fas fa-volume-up"></i></button>
+                    <button id="videoBtn"><i class="fas fa-video"></i></button>
                 </div>
             </div>
+
+            <!-- Compartilhamento de tela -->
+            <div class="screen-share-panel" id="screenSharePanel" style="display: none;">
+                <div class="screen-header">
+                    <span><i class="fas fa-desktop"></i> Compartilhando tela</span>
+                    <button id="stopShareBtn"><i class="fas fa-times"></i> Parar</button>
+                </div>
+                <video id="screenVideo" autoplay muted style="width: 100%; max-height: 300px; background: #0a0a0a; border-radius: 8px;"></video>
+            </div>
         </main>
+
+        <!-- Modal de Perfil -->
+        <div class="modal" id="profileModal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h2><i class="fas fa-user-edit"></i> Editar Perfil</h2>
+                    <button class="modal-close" id="closeProfileBtn">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="profile-avatar-section">
+                        <div class="profile-avatar-preview" id="profileAvatarPreview" style="background: #b31b1b;">D</div>
+                        <div class="profile-avatar-options">
+                            <label for="avatarEmoji" class="avatar-label">
+                                <i class="fas fa-smile"></i> Emoji
+                                <input type="text" id="avatarEmoji" maxlength="2" placeholder="👤" style="width: 50px; text-align: center; font-size: 24px;" />
+                            </label>
+                            <label for="avatarColor" class="avatar-label">
+                                <i class="fas fa-palette"></i> Cor
+                                <input type="color" id="avatarColor" value="#b31b1b" style="width: 40px; height: 40px; border-radius: 50%; border: none; cursor: pointer;" />
+                            </label>
+                        </div>
+                    </div>
+                    <div class="profile-field">
+                        <label><i class="fas fa-user"></i> Nome de usuário</label>
+                        <input type="text" id="profileUsername" value="DiscorServer" maxlength="30" />
+                    </div>
+                    <div class="profile-field">
+                        <label><i class="fas fa-tag"></i> Status</label>
+                        <select id="profileStatus">
+                            <option value="online">🟢 Online</option>
+                            <option value="idle">🟡 Ausente</option>
+                            <option value="dnd">🔴 Não perturbe</option>
+                            <option value="offline">⚫ Offline</option>
+                        </select>
+                    </div>
+                    <div class="profile-field">
+                        <label><i class="fas fa-info-circle"></i> Sobre mim</label>
+                        <textarea id="profileBio" rows="3" placeholder="Conte um pouco sobre você..."></textarea>
+                    </div>
+                    <div class="profile-field">
+                        <label><i class="fas fa-anchor"></i> Perfil animado</label>
+                        <input type="checkbox" id="profileAnimated" checked /> <span style="color: #aaa;">Ativar animação do avatar</span>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn-secondary" id="cancelProfileBtn">Cancelar</button>
+                    <button class="btn-primary" id="saveProfileBtn"><i class="fas fa-save"></i> Salvar</button>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="script.js"></script>
