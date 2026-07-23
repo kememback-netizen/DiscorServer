@@ -231,4 +231,189 @@ audioBtn.addEventListener('click', () => {
 startRecordBtn.addEventListener('click', async function() {
     try {
         const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-        media
+        mediaRecorder = new MediaRecorder(stream);
+        audioChunks = [];
+        isRecording = true;
+        seconds = 0;
+        
+        mediaRecorder.ondataavailable = event => {
+            audioChunks.push(event.data);
+        };
+        
+        mediaRecorder.onstop = () => {
+            const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(audioBlob);
+            audioPreview.src = audioUrl;
+            audioPreview.style.display = 'block';
+            sendAudioBtn.disabled = false;
+        };
+        
+        mediaRecorder.start();
+        startRecordBtn.disabled = true;
+        stopRecordBtn.disabled = false;
+        audioBtn.classList.add('recording');
+        
+        recordingTimer = setInterval(() => {
+            seconds++;
+            const mins = String(Math.floor(seconds / 60)).padStart(2, '0');
+            const secs = String(seconds % 60).padStart(2, '0');
+            audioTimer.textContent = `${mins}:${secs}`;
+        }, 1000);
+        
+    } catch (err) {
+        console.error('Erro ao acessar microfone:', err);
+        alert('Permita o acesso ao microfone para gravar áudio!');
+    }
+});
+
+stopRecordBtn.addEventListener('click', () => {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        clearInterval(recordingTimer);
+        startRecordBtn.disabled = false;
+        stopRecordBtn.disabled = true;
+        audioBtn.classList.remove('recording');
+        // Para todas as tracks
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+});
+
+sendAudioBtn.addEventListener('click', () => {
+    if (audioPreview.src && audioPreview.src !== '') {
+        addMessage(audioPreview.src, profileData.username, profileData.avatar, profileData.animated, true);
+        audioPreview.style.display = 'none';
+        audioPreview.src = '';
+        sendAudioBtn.disabled = true;
+        audioTimer.textContent = '00:00';
+        audioRecorder.style.display = 'none';
+    }
+});
+
+cancelAudioBtn.addEventListener('click', () => {
+    if (mediaRecorder && isRecording) {
+        mediaRecorder.stop();
+        isRecording = false;
+        clearInterval(recordingTimer);
+        mediaRecorder.stream.getTracks().forEach(track => track.stop());
+    }
+    audioPreview.style.display = 'none';
+    audioPreview.src = '';
+    sendAudioBtn.disabled = true;
+    audioTimer.textContent = '00:00';
+    startRecordBtn.disabled = false;
+    stopRecordBtn.disabled = true;
+    audioBtn.classList.remove('recording');
+    audioRecorder.style.display = 'none';
+});
+
+// ====== COMPARTILHAR TELA ======
+let screenStream = null;
+const shareScreenBtn = document.getElementById('shareScreenBtn');
+const screenSharePanel = document.getElementById('screenSharePanel');
+const screenVideo = document.getElementById('screenVideo');
+const stopShareBtn = document.getElementById('stopShareBtn');
+
+shareScreenBtn.addEventListener('click', async function() {
+    if (screenStream) {
+        // Se já está compartilhando, para
+        stopScreenShare();
+        return;
+    }
+    
+    try {
+        screenStream = await navigator.mediaDevices.getDisplayMedia({ 
+            video: true,
+            audio: true 
+        });
+        
+        screenVideo.srcObject = screenStream;
+        screenSharePanel.style.display = 'block';
+        shareScreenBtn.classList.add('active');
+        shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Compartilhando';
+        addMessage('Começou a compartilhar a tela', profileData.username, profileData.avatar, profileData.animated);
+        
+        screenStream.getVideoTracks()[0].onended = () => {
+            stopScreenShare();
+        };
+        
+    } catch (err) {
+        console.error('Erro ao compartilhar tela:', err);
+        alert('Permita o compartilhamento de tela para usar esta função!');
+    }
+});
+
+function stopScreenShare() {
+    if (screenStream) {
+        screenStream.getTracks().forEach(track => track.stop());
+        screenStream = null;
+    }
+    screenVideo.srcObject = null;
+    screenSharePanel.style.display = 'none';
+    shareScreenBtn.classList.remove('active');
+    shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Compartilhar';
+    addMessage('Parou de compartilhar a tela', 'Sistema', '🖥️', false);
+}
+
+stopShareBtn.addEventListener('click', stopScreenShare);
+
+// ====== CALL ======
+const callBtn = document.getElementById('callBtn');
+const callPanel = document.getElementById('callPanel');
+const endCallBtn = document.getElementById('endCallBtn');
+let isMuted = false;
+
+callBtn.addEventListener('click', () => {
+    callPanel.classList.toggle('active');
+    const t = translations;
+    callBtn.innerHTML = callPanel.classList.contains('active') 
+        ? `<i class="fas fa-phone"></i> ${t.call || 'Chamada'}` 
+        : `<i class="fas fa-phone"></i> ${t.call || 'Call'}`;
+    
+    if (callPanel.classList.contains('active')) {
+        addMessage('Iniciou uma chamada de voz', 'Sistema', '📞', false);
+        // Atualiza nome do caller
+        document.getElementById('callerName').textContent = profileData.username;
+        document.getElementById('callerAvatar').textContent = profileData.avatar;
+    }
+});
+
+endCallBtn.addEventListener('click', () => {
+    callPanel.classList.remove('active');
+    const t = translations;
+    callBtn.innerHTML = `<i class="fas fa-phone"></i> ${t.call || 'Call'}`;
+    addMessage('Encerrou a chamada', 'Sistema', '📞', false);
+});
+
+// Controles da chamada
+document.getElementById('muteMicBtn').addEventListener('click', function() {
+    isMuted = !isMuted;
+    this.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
+    this.style.background = isMuted ? '#ff4444' : '#2a2a2a';
+});
+
+document.getElementById('volumeBtn').addEventListener('click', function() {
+    this.innerHTML = this.innerHTML.includes('volume-up') ? '<i class="fas fa-volume-mute"></i>' : '<i class="fas fa-volume-up"></i>';
+});
+
+document.getElementById('videoBtn').addEventListener('click', function() {
+    this.innerHTML = this.innerHTML.includes('video') ? '<i class="fas fa-video-slash"></i>' : '<i class="fas fa-video"></i>';
+    this.style.background = this.innerHTML.includes('video-slash') ? '#ff4444' : '#2a2a2a';
+});
+
+// ====== Idioma ======
+document.getElementById('langBtn').addEventListener('click', () => {
+    const langs = ['pt', 'en', 'es', 'fr'];
+    let idx = langs.indexOf(currentLang);
+    idx = (idx + 1) % langs.length;
+    setLanguage(langs[idx]);
+});
+
+// ====== Inicialização ======
+setLanguage('pt');
+updateProfileUI();
+
+// Mensagem de boas-vindas
+setTimeout(() => {
+    addMessage('Use o botão de perfil (👤) para personalizar seu avatar!', 'Sistema', '💡', false);
+}, 500);
