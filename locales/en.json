@@ -1,0 +1,20 @@
+{
+    "channel": "Channel",
+    "call": "Call",
+    "endCall": "End call",
+    "you": "You",
+    "msgPlaceholder": "Message...",
+    "welcome": "Welcome to DiscorServer! 🚀",
+    "animated": "My profile is animated! ✨",
+    "online": "Online",
+    "offline": "Offline",
+    "typing": "typing...",
+    "mute": "Mute",
+    "unmute": "Unmute",
+    "deafen": "Deafen",
+    "undeafen": "Undeafen",
+    "settings": "Settings",
+    "logout": "Logout",
+    "friends": "Friends",
+    "servers": "Servers"
+}

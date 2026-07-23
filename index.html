@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>DiscorServer</title>
+    <link rel="stylesheet" href="styles.css" />
+    <!-- Font Awesome (ícones) -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+</head>
+<body>
+    <div id="app">
+        <!-- Barra lateral de servidores -->
+        <aside class="server-bar">
+            <div class="server-icon active" title="DiscorServer">
+                <i class="fas fa-server"></i>
+            </div>
+            <div class="divider"></div>
+            <div class="server-icon"><i class="fas fa-hashtag"></i></div>
+            <div class="server-icon"><i class="fas fa-phone"></i></div>
+        </aside>
+
+        <!-- Painel de canais -->
+        <nav class="channels">
+            <div class="server-header">
+                <span>DiscorServer</span>
+                <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="channel-category">Text channels</div>
+            <div class="channel" data-channel="geral"><i class="fas fa-hashtag"></i> geral</div>
+            <div class="channel" data-channel="anuncios"><i class="fas fa-bullhorn"></i> anúncios</div>
+            <div class="channel-category">Voz</div>
+            <div class="channel" data-channel="sala1"><i class="fas fa-volume-up"></i> Sala 1</div>
+            <div class="channel" data-channel="sala2"><i class="fas fa-microphone"></i> Sala 2</div>
+        </nav>
+
+        <!-- Área principal (chat + call) -->
+        <main class="chat-area">
+            <!-- Cabeçalho do chat -->
+            <header class="chat-header">
+                <div class="channel-info">
+                    <i class="fas fa-hashtag"></i>
+                    <span id="currentChannel">geral</span>
+                </div>
+                <div class="header-actions">
+                    <button id="callBtn" class="call-btn"><i class="fas fa-phone"></i> Call</button>
+                    <button id="langBtn" class="lang-btn"><i class="fas fa-globe"></i> <span id="langLabel">PT</span></button>
+                </div>
+            </header>
+
+            <!-- Mensagens do chat -->
+            <div class="messages" id="messageContainer">
+                <div class="message">
+                    <div class="avatar" style="background: #b31b1b;">D</div>
+                    <div class="msg-content">
+                        <span class="username">DiscorServer <span class="badge">ADM</span></span>
+                        <span class="timestamp">hoje</span>
+                        <p>Bem-vindo ao DiscorServer! 🚀</p>
+                    </div>
+                </div>
+                <div class="message">
+                    <div class="avatar animated-avatar" style="background: #222;">👤</div>
+                    <div class="msg-content">
+                        <span class="username">PerfilAnimado <i class="fas fa-circle" style="color: #43b581; font-size: 10px;"></i></span>
+                        <span class="timestamp">agora</span>
+                        <p>Meu perfil é animado! ✨</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Input de mensagem -->
+            <div class="message-input">
+                <i class="fas fa-plus-circle"></i>
+                <input type="text" id="msgInput" placeholder="Mensagem..." />
+                <button id="sendBtn"><i class="fas fa-paper-plane"></i></button>
+            </div>
+
+            <!-- Painel de chamada (call) -->
+            <div class="call-panel" id="callPanel">
+                <div class="call-header">
+                    <span><i class="fas fa-phone"></i> Chamada ativa</span>
+                    <button id="endCallBtn"><i class="fas fa-times"></i></button>
+                </div>
+                <div class="call-users">
+                    <div class="call-user">
+                        <div class="avatar animated-avatar">🎤</div>
+                        <span>Você</span>
+                    </div>
+                    <div class="call-user">
+                        <div class="avatar" style="background: #b31b1b;">D</div>
+                        <span>Discor</span>
+                    </div>
+                </div>
+                <div class="call-controls">
+                    <button><i class="fas fa-microphone"></i></button>
+                    <button><i class="fas fa-volume-up"></i></button>
+                    <button><i class="fas fa-video"></i></button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

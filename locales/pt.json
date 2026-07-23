@@ -1,0 +1,20 @@
+{
+    "channel": "Canal",
+    "call": "Chamada",
+    "endCall": "Encerrar chamada",
+    "you": "Você",
+    "msgPlaceholder": "Mensagem...",
+    "welcome": "Bem-vindo ao DiscorServer! 🚀",
+    "animated": "Meu perfil é animado! ✨",
+    "online": "Online",
+    "offline": "Offline",
+    "typing": "digitando...",
+    "mute": "Silenciar",
+    "unmute": "Ativar som",
+    "deafen": "Silenciar áudio",
+    "undeafen": "Ativar áudio",
+    "settings": "Configurações",
+    "logout": "Sair",
+    "friends": "Amigos",
+    "servers": "Servidores"
+}
