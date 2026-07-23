@@ -31,8 +31,8 @@
             <div class="channel" data-channel="anuncios"><i class="fas fa-bullhorn"></i> anúncios</div>
             <div class="channel" data-channel="random"><i class="fas fa-dice"></i> random</div>
             <div class="channel-category">Canais de voz</div>
-            <div class="channel" data-channel="sala1"><i class="fas fa-volume-up"></i> Sala 1</div>
-            <div class="channel" data-channel="sala2"><i class="fas fa-microphone"></i> Sala 2</div>
+            <div class="channel voice-channel" data-channel="voz-geral"><i class="fas fa-volume-up"></i> Geral</div>
+            <div class="channel voice-channel" data-channel="voz-jogos"><i class="fas fa-gamepad"></i> Jogos</div>
         </nav>
 
         <!-- Área principal -->
@@ -46,7 +46,7 @@
                 </div>
                 <div class="header-actions">
                     <button id="shareScreenBtn" class="share-btn"><i class="fas fa-desktop"></i> Compartilhar</button>
-                    <button id="callBtn" class="call-btn"><i class="fas fa-phone"></i> Call</button>
+                    <button id="callBtn" class="call-btn"><i class="fas fa-phone"></i> Entrar na Call</button>
                     <button id="langBtn" class="lang-btn"><i class="fas fa-globe"></i> <span id="langLabel">PT</span></button>
                 </div>
             </header>
@@ -76,30 +76,30 @@
                 <audio id="audioPreview" controls style="width: 100%; margin-top: 8px; display: none;"></audio>
             </div>
 
-            <!-- Painel de chamada -->
+            <!-- Painel de chamada de voz (VERDADEIRA CALL) -->
             <div class="call-panel" id="callPanel">
                 <div class="call-header">
-                    <span><i class="fas fa-phone"></i> Chamada ativa</span>
-                    <button id="endCallBtn"><i class="fas fa-times"></i></button>
+                    <span><i class="fas fa-phone"></i> Chamada de Voz</span>
+                    <span id="callChannel" style="color: #888; font-size: 14px;">#Geral</span>
+                    <button id="endCallBtn"><i class="fas fa-times"></i> Sair</button>
                 </div>
-                <div class="call-users">
-                    <div class="call-user">
-                        <div class="avatar animated-avatar" id="callerAvatar">🎤</div>
+                <div class="call-users" id="callUsersContainer">
+                    <div class="call-user active-speaker" id="localUser">
+                        <div class="avatar-container">
+                            <div class="avatar" id="callerAvatar">🎤</div>
+                            <div class="speaking-indicator"></div>
+                        </div>
                         <span id="callerName">Você</span>
+                        <span class="call-status">🟢</span>
                     </div>
-                    <div class="call-user">
-                        <div class="avatar" style="background: #b31b1b;">D</div>
-                        <span>Discor</span>
-                    </div>
-                    <div class="call-user">
-                        <div class="avatar" style="background: #2a6b2a;">J</div>
-                        <span>João</span>
-                    </div>
+                    <!-- Usuários remotos serão adicionados aqui -->
                 </div>
                 <div class="call-controls">
-                    <button id="muteMicBtn"><i class="fas fa-microphone"></i></button>
-                    <button id="volumeBtn"><i class="fas fa-volume-up"></i></button>
-                    <button id="videoBtn"><i class="fas fa-video"></i></button>
+                    <button id="muteMicBtn" class="call-control active"><i class="fas fa-microphone"></i></button>
+                    <button id="deafenBtn" class="call-control"><i class="fas fa-volume-up"></i></button>
+                    <button id="videoBtn" class="call-control"><i class="fas fa-video"></i></button>
+                    <button id="screenShareCallBtn" class="call-control"><i class="fas fa-desktop"></i></button>
+                    <button id="leaveCallBtn" class="call-control leave"><i class="fas fa-phone-slash"></i></button>
                 </div>
             </div>
 
@@ -121,6 +121,7 @@
                     <button class="modal-close" id="closeProfileBtn">&times;</button>
                 </div>
                 <div class="modal-body">
+                    <!-- Avatar -->
                     <div class="profile-avatar-section">
                         <div class="profile-avatar-preview" id="profileAvatarPreview" style="background: #b31b1b;">D</div>
                         <div class="profile-avatar-options">
@@ -133,11 +134,13 @@
                                 <input type="color" id="avatarColor" value="#b31b1b" style="width: 50px; height: 40px; border-radius: 8px; border: none; cursor: pointer;" />
                             </div>
                             <div class="avatar-option">
-                                <label><i class="fas fa-image"></i> URL da Foto</label>
-                                <input type="text" id="avatarUrl" placeholder="https://exemplo.com/foto.jpg" style="width: 180px;" />
+                                <label><i class="fas fa-upload"></i> Foto</label>
+                                <input type="file" id="avatarFile" accept="image/*" style="width: 180px;" />
                             </div>
                         </div>
                     </div>
+
+                    <!-- Informações básicas -->
                     <div class="profile-field">
                         <label><i class="fas fa-user"></i> Nome de usuário</label>
                         <input type="text" id="profileUsername" value="DiscorServer" maxlength="30" />
@@ -155,6 +158,50 @@
                         <label><i class="fas fa-info-circle"></i> Sobre mim</label>
                         <textarea id="profileBio" rows="3" placeholder="Conte um pouco sobre você..."></textarea>
                     </div>
+
+                    <!-- Decorações do Perfil -->
+                    <div class="profile-section-title">
+                        <i class="fas fa-star"></i> Decorações do Perfil
+                    </div>
+                    <div class="profile-decorations">
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationGlow" /> 
+                                <span class="decoration-label">✨ Brilho</span>
+                            </label>
+                        </div>
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationPulse" /> 
+                                <span class="decoration-label">💫 Pulsar</span>
+                            </label>
+                        </div>
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationBorder" /> 
+                                <span class="decoration-label">🌟 Borda Dourada</span>
+                            </label>
+                        </div>
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationRainbow" /> 
+                                <span class="decoration-label">🌈 Arco-Íris</span>
+                            </label>
+                        </div>
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationCrown" /> 
+                                <span class="decoration-label">👑 Coroa</span>
+                            </label>
+                        </div>
+                        <div class="decoration-option">
+                            <label>
+                                <input type="checkbox" id="decorationSparkle" /> 
+                                <span class="decoration-label">✨ Brilhos</span>
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="profile-field">
                         <label><i class="fas fa-anchor"></i> Perfil animado</label>
                         <input type="checkbox" id="profileAnimated" checked /> <span style="color: #aaa;">Ativar animação do avatar</span>
