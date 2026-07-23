@@ -11,7 +11,8 @@ const locales = {
         recording: 'Gravando...',
         stopRecording: 'Parar gravação',
         sendAudio: 'Enviar áudio',
-        cancel: 'Cancelar'
+        cancel: 'Cancelar',
+        system: 'Sistema'
     },
     en: {
         channel: 'Channel',
@@ -24,7 +25,8 @@ const locales = {
         recording: 'Recording...',
         stopRecording: 'Stop recording',
         sendAudio: 'Send audio',
-        cancel: 'Cancel'
+        cancel: 'Cancel',
+        system: 'System'
     },
     es: {
         channel: 'Canal',
@@ -37,7 +39,8 @@ const locales = {
         recording: 'Grabando...',
         stopRecording: 'Detener grabación',
         sendAudio: 'Enviar audio',
-        cancel: 'Cancelar'
+        cancel: 'Cancelar',
+        system: 'Sistema'
     },
     fr: {
         channel: 'Canal',
@@ -50,7 +53,8 @@ const locales = {
         recording: 'Enregistrement...',
         stopRecording: 'Arrêter',
         sendAudio: 'Envoyer',
-        cancel: 'Annuler'
+        cancel: 'Annuler',
+        system: 'Système'
     }
 };
 
@@ -66,31 +70,71 @@ function setLanguage(lang) {
 function applyLanguage() {
     const t = translations;
     document.getElementById('langLabel').textContent = currentLang.toUpperCase();
-    document.querySelector('.channel-info span').textContent = t.channel || 'Canal';
+    document.querySelector('.channel-info span').textContent = document.getElementById('currentChannel').textContent || t.channel;
     document.querySelector('.call-header span').innerHTML = `<i class="fas fa-phone"></i> ${t.call || 'Chamada'}`;
     document.getElementById('msgInput').placeholder = t.msgPlaceholder || 'Mensagem...';
     document.getElementById('audioTimer').textContent = '00:00';
 }
 
-// ====== Perfil ======
+// ====== PERFIL COM localStorage ======
 let profileData = {
     username: 'DiscorServer',
     avatar: 'D',
     avatarColor: '#b31b1b',
+    avatarUrl: '',
     status: 'online',
     bio: '',
     animated: true
 };
+
+// Carregar perfil salvo
+function loadProfile() {
+    const saved = localStorage.getItem('discorserver_profile');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            profileData = { ...profileData, ...parsed };
+        } catch (e) {
+            console.error('Erro ao carregar perfil:', e);
+        }
+    }
+    updateProfileUI();
+}
+
+// Salvar perfil
+function saveProfile() {
+    localStorage.setItem('discorserver_profile', JSON.stringify(profileData));
+}
 
 function updateProfileUI() {
     const mainAvatar = document.getElementById('mainAvatar');
     const mainUsername = document.getElementById('mainUsername');
     const profileAvatarPreview = document.getElementById('profileAvatarPreview');
     
-    mainAvatar.textContent = profileData.avatar;
-    mainAvatar.style.background = profileData.avatarColor;
-    mainUsername.innerHTML = `${profileData.username} <span class="badge">ADM</span>`;
+    // Atualiza avatar principal
+    if (profileData.avatarUrl && profileData.avatarUrl.trim() !== '') {
+        mainAvatar.innerHTML = `<img src="${profileData.avatarUrl}" class="avatar-img" alt="avatar" />`;
+        mainAvatar.style.background = 'transparent';
+    } else {
+        mainAvatar.textContent = profileData.avatar || '👤';
+        mainAvatar.style.background = profileData.avatarColor || '#b31b1b';
+        mainAvatar.style.color = '#fff';
+    }
     
+    // Atualiza nome
+    mainUsername.innerHTML = `${profileData.username} <span class="badge">${getStatusText()}</span>`;
+    
+    // Atualiza preview no modal
+    if (profileData.avatarUrl && profileData.avatarUrl.trim() !== '') {
+        profileAvatarPreview.innerHTML = `<img src="${profileData.avatarUrl}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+        profileAvatarPreview.style.background = 'transparent';
+    } else {
+        profileAvatarPreview.textContent = profileData.avatar || '👤';
+        profileAvatarPreview.style.background = profileData.avatarColor || '#b31b1b';
+        profileAvatarPreview.style.color = '#fff';
+    }
+    
+    // Animações
     if (profileData.animated) {
         mainAvatar.classList.add('animated-avatar');
         profileAvatarPreview.classList.add('animated');
@@ -99,17 +143,158 @@ function updateProfileUI() {
         profileAvatarPreview.classList.remove('animated');
     }
     
-    // Atualiza status
+    // Atualiza contador de membros
+    updateMemberCount();
+}
+
+function getStatusText() {
     const statusMap = {
         online: '🟢 Online',
         idle: '🟡 Ausente',
         dnd: '🔴 Não perturbe',
         offline: '⚫ Offline'
     };
-    document.querySelector('.username .badge').textContent = statusMap[profileData.status] || 'ADM';
+    return statusMap[profileData.status] || '🟢 Online';
 }
 
-// ====== Modal de Perfil ======
+// ====== CHAT GLOBAL (TODOS VEEM) ======
+let messages = [];
+const MAX_MESSAGES = 100;
+
+// Carregar mensagens salvas
+function loadMessages() {
+    const saved = localStorage.getItem('discorserver_messages');
+    if (saved) {
+        try {
+            messages = JSON.parse(saved);
+            if (!Array.isArray(messages)) messages = [];
+            // Limita o número de mensagens
+            if (messages.length > MAX_MESSAGES) {
+                messages = messages.slice(-MAX_MESSAGES);
+            }
+        } catch (e) {
+            messages = [];
+        }
+    }
+    renderMessages();
+}
+
+// Salvar mensagens
+function saveMessages() {
+    // Limita antes de salvar
+    if (messages.length > MAX_MESSAGES) {
+        messages = messages.slice(-MAX_MESSAGES);
+    }
+    localStorage.setItem('discorserver_messages', JSON.stringify(messages));
+}
+
+// Adicionar mensagem (TODOS VEEM)
+function addMessage(text, username = 'Você', avatar = '👤', isAnimated = false, isAudio = false, isSystem = false) {
+    const message = {
+        id: Date.now() + '_' + Math.random().toString(36).substr(2, 5),
+        text: text,
+        username: username,
+        avatar: avatar,
+        avatarColor: profileData.avatarColor || '#b31b1b',
+        avatarUrl: profileData.avatarUrl || '',
+        isAnimated: isAnimated,
+        isAudio: isAudio,
+        isSystem: isSystem,
+        timestamp: new Date().toISOString(),
+        status: profileData.status || 'online'
+    };
+    
+    messages.push(message);
+    if (messages.length > MAX_MESSAGES) {
+        messages = messages.slice(-MAX_MESSAGES);
+    }
+    saveMessages();
+    renderMessages();
+}
+
+// Renderizar mensagens
+function renderMessages() {
+    const container = document.getElementById('messageContainer');
+    container.innerHTML = '';
+    
+    if (messages.length === 0) {
+        // Mensagem de boas-vindas
+        const t = translations;
+        container.innerHTML = `
+            <div class="message system">
+                <div class="msg-content" style="text-align:center;width:100%;">
+                    <p style="color:#888;font-style:italic;">${t.welcome || 'Bem-vindo ao DiscorServer! 🚀'}</p>
+                    <p style="color:#555;font-size:12px;">As mensagens são salvas automaticamente</p>
+                </div>
+            </div>
+        `;
+        return;
+    }
+    
+    messages.forEach(msg => {
+        const div = document.createElement('div');
+        div.className = `message ${msg.isSystem ? 'system' : ''}`;
+        
+        // Determina o avatar
+        let avatarHtml = '';
+        if (msg.avatarUrl && msg.avatarUrl.trim() !== '') {
+            avatarHtml = `<img src="${msg.avatarUrl}" class="avatar-img" alt="avatar" />`;
+        } else {
+            avatarHtml = msg.avatar || '👤';
+        }
+        
+        const avatarClass = msg.isAnimated ? 'avatar animated-avatar' : 'avatar';
+        const timestamp = new Date(msg.timestamp).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+        const statusClass = `status-${msg.status || 'online'}`;
+        
+        // Conteúdo da mensagem
+        let contentHtml = '';
+        if (msg.isAudio) {
+            contentHtml = `<audio controls src="${msg.text}" style="max-width: 300px; border-radius: 20px;"></audio>`;
+        } else {
+            contentHtml = `<p>${msg.text}</p>`;
+        }
+        
+        div.innerHTML = `
+            <div class="${avatarClass}" style="background: ${msg.avatarUrl ? 'transparent' : (msg.avatarColor || '#2a2a2a')};">
+                ${avatarHtml}
+            </div>
+            <div class="msg-content">
+                <span class="username">
+                    ${msg.username}
+                    <span class="badge ${statusClass}">${getStatusEmoji(msg.status)}</span>
+                </span>
+                <span class="timestamp">${timestamp}</span>
+                ${contentHtml}
+            </div>
+        `;
+        container.appendChild(div);
+    });
+    
+    // Scroll para o final
+    container.scrollTop = container.scrollHeight;
+}
+
+function getStatusEmoji(status) {
+    const map = {
+        online: '🟢',
+        idle: '🟡',
+        dnd: '🔴',
+        offline: '⚫'
+    };
+    return map[status] || '🟢';
+}
+
+// ====== UPDATE MEMBER COUNT ======
+function updateMemberCount() {
+    // Simula membros online (baseado no número de mensagens + 1)
+    const baseMembers = 3;
+    const extra = Math.min(Math.floor(messages.length / 10), 10);
+    const total = baseMembers + extra;
+    document.getElementById('memberCount').textContent = `👥 ${total} online`;
+}
+
+// ====== MODAL DE PERFIL ======
 const profileModal = document.getElementById('profileModal');
 const profileBtn = document.getElementById('profileBtn');
 const closeProfileBtn = document.getElementById('closeProfileBtn');
@@ -118,15 +303,35 @@ const saveProfileBtn = document.getElementById('saveProfileBtn');
 
 function openProfileModal() {
     document.getElementById('profileUsername').value = profileData.username;
-    document.getElementById('avatarEmoji').value = profileData.avatar;
-    document.getElementById('avatarColor').value = profileData.avatarColor;
-    document.getElementById('profileStatus').value = profileData.status;
+    document.getElementById('avatarEmoji').value = profileData.avatar || '👤';
+    document.getElementById('avatarColor').value = profileData.avatarColor || '#b31b1b';
+    document.getElementById('avatarUrl').value = profileData.avatarUrl || '';
+    document.getElementById('profileStatus').value = profileData.status || 'online';
     document.getElementById('profileBio').value = profileData.bio || '';
-    document.getElementById('profileAnimated').checked = profileData.animated;
-    document.getElementById('profileAvatarPreview').textContent = profileData.avatar;
-    document.getElementById('profileAvatarPreview').style.background = profileData.avatarColor;
+    document.getElementById('profileAnimated').checked = profileData.animated !== false;
+    updateProfilePreview();
     profileModal.classList.add('active');
 }
+
+function updateProfilePreview() {
+    const preview = document.getElementById('profileAvatarPreview');
+    const url = document.getElementById('avatarUrl').value.trim();
+    const emoji = document.getElementById('avatarEmoji').value || '👤';
+    const color = document.getElementById('avatarColor').value;
+    
+    if (url) {
+        preview.innerHTML = `<img src="${url}" alt="avatar" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" />`;
+        preview.style.background = 'transparent';
+    } else {
+        preview.textContent = emoji;
+        preview.style.background = color;
+        preview.style.color = '#fff';
+    }
+}
+
+document.getElementById('avatarEmoji').addEventListener('input', updateProfilePreview);
+document.getElementById('avatarColor').addEventListener('input', updateProfilePreview);
+document.getElementById('avatarUrl').addEventListener('input', updateProfilePreview);
 
 function closeProfileModal() {
     profileModal.classList.remove('active');
@@ -139,51 +344,33 @@ profileModal.addEventListener('click', (e) => {
     if (e.target === profileModal) closeProfileModal();
 });
 
-document.getElementById('avatarEmoji').addEventListener('input', function() {
-    document.getElementById('profileAvatarPreview').textContent = this.value || '👤';
-});
-
-document.getElementById('avatarColor').addEventListener('input', function() {
-    document.getElementById('profileAvatarPreview').style.background = this.value;
-});
-
 saveProfileBtn.addEventListener('click', function() {
-    profileData.username = document.getElementById('profileUsername').value || 'Usuário';
+    const oldUsername = profileData.username;
+    
+    profileData.username = document.getElementById('profileUsername').value.trim() || 'Usuário';
     profileData.avatar = document.getElementById('avatarEmoji').value || '👤';
     profileData.avatarColor = document.getElementById('avatarColor').value || '#b31b1b';
+    profileData.avatarUrl = document.getElementById('avatarUrl').value.trim();
     profileData.status = document.getElementById('profileStatus').value;
     profileData.bio = document.getElementById('profileBio').value;
     profileData.animated = document.getElementById('profileAnimated').checked;
     
+    saveProfile();
     updateProfileUI();
     
-    // Adiciona mensagem de sistema
-    addMessage(`Perfil atualizado: ${profileData.username}`, 'Sistema', '⚙️', false);
+    // Mensagem de sistema sobre a mudança
+    if (oldUsername !== profileData.username) {
+        addMessage(`${oldUsername} mudou o nome para ${profileData.username}`, 'Sistema', '⚙️', false, false, true);
+    } else {
+        addMessage(`Perfil atualizado: ${profileData.username}`, 'Sistema', '⚙️', false, false, true);
+    }
+    
     closeProfileModal();
 });
 
-// ====== Chat ======
+// ====== CHAT ======
 const msgInput = document.getElementById('msgInput');
 const sendBtn = document.getElementById('sendBtn');
-const msgContainer = document.getElementById('messageContainer');
-
-function addMessage(text, username = 'Você', avatar = '👤', isAnimated = false, isAudio = false) {
-    const div = document.createElement('div');
-    div.className = 'message';
-    const avatarClass = isAnimated ? 'avatar animated-avatar' : 'avatar';
-    const audioHtml = isAudio ? `<audio controls src="${text}" style="max-width: 300px; border-radius: 20px;"></audio>` : `<p>${text}</p>`;
-    
-    div.innerHTML = `
-        <div class="${avatarClass}" style="background: ${isAnimated ? '#b31b1b' : '#2a2a2a'};">${avatar}</div>
-        <div class="msg-content">
-            <span class="username">${username}</span>
-            <span class="timestamp">${translations.now || 'agora'}</span>
-            ${audioHtml}
-        </div>
-    `;
-    msgContainer.appendChild(div);
-    msgContainer.scrollTop = msgContainer.scrollHeight;
-}
 
 sendBtn.addEventListener('click', () => {
     const text = msgInput.value.trim();
@@ -197,14 +384,14 @@ msgInput.addEventListener('keydown', (e) => {
     if (e.key === 'Enter') sendBtn.click();
 });
 
-// ====== Canais ======
+// ====== CANAIS ======
 document.querySelectorAll('.channel').forEach(ch => {
     ch.addEventListener('click', function() {
         document.querySelectorAll('.channel').forEach(c => c.classList.remove('active'));
         this.classList.add('active');
         const name = this.dataset.channel || this.textContent.trim();
         document.getElementById('currentChannel').textContent = name;
-        addMessage(`Entrou no canal #${name}`, 'Sistema', '🔔', false);
+        addMessage(`Entrou no canal #${name}`, 'Sistema', '🔔', false, false, true);
     });
 });
 
@@ -274,7 +461,6 @@ stopRecordBtn.addEventListener('click', () => {
         startRecordBtn.disabled = false;
         stopRecordBtn.disabled = true;
         audioBtn.classList.remove('recording');
-        // Para todas as tracks
         mediaRecorder.stream.getTracks().forEach(track => track.stop());
     }
 });
@@ -316,7 +502,6 @@ const stopShareBtn = document.getElementById('stopShareBtn');
 
 shareScreenBtn.addEventListener('click', async function() {
     if (screenStream) {
-        // Se já está compartilhando, para
         stopScreenShare();
         return;
     }
@@ -352,7 +537,7 @@ function stopScreenShare() {
     screenSharePanel.style.display = 'none';
     shareScreenBtn.classList.remove('active');
     shareScreenBtn.innerHTML = '<i class="fas fa-desktop"></i> Compartilhar';
-    addMessage('Parou de compartilhar a tela', 'Sistema', '🖥️', false);
+    addMessage('Parou de compartilhar a tela', 'Sistema', '🖥️', false, false, true);
 }
 
 stopShareBtn.addEventListener('click', stopScreenShare);
@@ -371,8 +556,7 @@ callBtn.addEventListener('click', () => {
         : `<i class="fas fa-phone"></i> ${t.call || 'Call'}`;
     
     if (callPanel.classList.contains('active')) {
-        addMessage('Iniciou uma chamada de voz', 'Sistema', '📞', false);
-        // Atualiza nome do caller
+        addMessage('Iniciou uma chamada de voz', 'Sistema', '📞', false, false, true);
         document.getElementById('callerName').textContent = profileData.username;
         document.getElementById('callerAvatar').textContent = profileData.avatar;
     }
@@ -382,10 +566,9 @@ endCallBtn.addEventListener('click', () => {
     callPanel.classList.remove('active');
     const t = translations;
     callBtn.innerHTML = `<i class="fas fa-phone"></i> ${t.call || 'Call'}`;
-    addMessage('Encerrou a chamada', 'Sistema', '📞', false);
+    addMessage('Encerrou a chamada', 'Sistema', '📞', false, false, true);
 });
 
-// Controles da chamada
 document.getElementById('muteMicBtn').addEventListener('click', function() {
     isMuted = !isMuted;
     this.innerHTML = isMuted ? '<i class="fas fa-microphone-slash"></i>' : '<i class="fas fa-microphone"></i>';
@@ -401,7 +584,7 @@ document.getElementById('videoBtn').addEventListener('click', function() {
     this.style.background = this.innerHTML.includes('video-slash') ? '#ff4444' : '#2a2a2a';
 });
 
-// ====== Idioma ======
+// ====== IDIOMA ======
 document.getElementById('langBtn').addEventListener('click', () => {
     const langs = ['pt', 'en', 'es', 'fr'];
     let idx = langs.indexOf(currentLang);
@@ -409,11 +592,25 @@ document.getElementById('langBtn').addEventListener('click', () => {
     setLanguage(langs[idx]);
 });
 
-// ====== Inicialização ======
-setLanguage('pt');
-updateProfileUI();
+// ====== INICIALIZAÇÃO ======
+function init() {
+    setLanguage('pt');
+    loadProfile();
+    loadMessages();
+    updateMemberCount();
+    
+    // Simula usuários entrando
+    setTimeout(() => {
+        addMessage('João entrou no servidor', 'Sistema', '👋', false, false, true);
+    }, 1000);
+    
+    setTimeout(() => {
+        addMessage('Maria entrou no servidor', 'Sistema', '👋', false, false, true);
+    }, 2000);
+    
+    // Atualiza contador a cada 30 segundos
+    setInterval(updateMemberCount, 30000);
+}
 
-// Mensagem de boas-vindas
-setTimeout(() => {
-    addMessage('Use o botão de perfil (👤) para personalizar seu avatar!', 'Sistema', '💡', false);
-}, 500);
+// Iniciar
+init();
