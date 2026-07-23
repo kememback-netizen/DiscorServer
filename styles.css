@@ -14,6 +14,112 @@ body {
     color: #f0f0f0;
 }
 
+/* ====== TELA DE LOGIN ====== */
+.login-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0,0,0,0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999;
+}
+.login-overlay.hidden {
+    display: none;
+}
+.login-container {
+    background: #1a1a1a;
+    border-radius: 24px;
+    padding: 48px 40px;
+    width: 420px;
+    max-width: 95%;
+    border: 1px solid #2a2a2a;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.9);
+}
+.login-header {
+    text-align: center;
+    margin-bottom: 32px;
+}
+.login-header h1 {
+    color: #f0f0f0;
+    font-size: 32px;
+    margin-top: 12px;
+}
+.login-header p {
+    color: #888;
+    font-size: 14px;
+    margin-top: 4px;
+}
+.login-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+.login-form input[type="text"] {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 12px;
+    padding: 14px 18px;
+    color: #eee;
+    font-size: 16px;
+    outline: none;
+    transition: 0.2s;
+}
+.login-form input[type="text"]:focus {
+    border-color: #b31b1b;
+}
+.login-avatar-preview {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: #b31b1b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    margin: 0 auto;
+    border: 3px solid #b31b1b;
+}
+.login-avatar-options {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    align-items: center;
+}
+.login-avatar-options label {
+    color: #aaa;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.login-avatar-options input {
+    background: #0f0f0f;
+    border: 1px solid #2a2a2a;
+    border-radius: 8px;
+    color: #eee;
+    padding: 4px 8px;
+}
+#loginBtn {
+    background: #b31b1b;
+    border: none;
+    color: #fff;
+    padding: 14px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.2s;
+    margin-top: 8px;
+}
+#loginBtn:hover {
+    background: #cc2222;
+}
+
+/* ====== APP PRINCIPAL ====== */
 #app {
     display: flex;
     width: 1300px;
@@ -148,6 +254,7 @@ body {
 .header-actions {
     display: flex;
     gap: 12px;
+    align-items: center;
 }
 .call-btn, .lang-btn, .share-btn {
     background: transparent;
@@ -252,23 +359,15 @@ body {
     100% { transform: scale(1.05); box-shadow: 0 0 12px 4px rgba(179, 27, 27, 0.3); }
 }
 
-/* Decorações do perfil */
-.decoration-glow {
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.6);
-}
-.decoration-pulse {
-    animation: decoration-pulse 1s infinite alternate;
-}
+/* Decorações */
+.decoration-glow { box-shadow: 0 0 20px rgba(255, 215, 0, 0.6); }
+.decoration-pulse { animation: decoration-pulse 1s infinite alternate; }
 @keyframes decoration-pulse {
     0% { transform: scale(1); }
     100% { transform: scale(1.08); }
 }
-.decoration-border {
-    border: 3px solid gold !important;
-}
-.decoration-rainbow {
-    animation: rainbow 2s infinite linear;
-}
+.decoration-border { border: 3px solid gold !important; }
+.decoration-rainbow { animation: rainbow 2s infinite linear; }
 @keyframes rainbow {
     0% { filter: hue-rotate(0deg); }
     100% { filter: hue-rotate(360deg); }
@@ -280,9 +379,7 @@ body {
     right: -8px;
     font-size: 16px;
 }
-.decoration-sparkle {
-    animation: sparkle 0.5s infinite alternate;
-}
+.decoration-sparkle { animation: sparkle 0.5s infinite alternate; }
 @keyframes sparkle {
     0% { filter: brightness(1); }
     100% { filter: brightness(1.5); }
@@ -422,7 +519,7 @@ body {
     margin-top: 4px;
 }
 
-/* Call Panel - VERDADEIRA CALL */
+/* Call Panel */
 .call-panel {
     background: #1a1a1a;
     border-top: 2px solid #43b581;
@@ -704,122 +801,3 @@ body {
 .decoration-option {
     padding: 6px 12px;
     background: #0f0f0f;
-    border-radius: 8px;
-    border: 1px solid #2a2a2a;
-    transition: 0.2s;
-}
-.decoration-option:hover {
-    background: #1a1a1a;
-}
-.decoration-option label {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    color: #ccc;
-    font-size: 13px;
-    cursor: pointer;
-}
-.decoration-option input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: #b31b1b;
-}
-.decoration-label {
-    font-size: 13px;
-}
-.modal-footer {
-    padding: 16px 24px;
-    border-top: 1px solid #2a2a2a;
-    display: flex;
-    justify-content: flex-end;
-    gap: 12px;
-}
-.btn-primary {
-    background: #b31b1b;
-    color: #fff;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.btn-primary:hover {
-    background: #cc2222;
-}
-.btn-secondary {
-    background: #2a2a2a;
-    color: #ddd;
-    border: none;
-    padding: 8px 20px;
-    border-radius: 20px;
-    cursor: pointer;
-    transition: 0.2s;
-}
-.btn-secondary:hover {
-    background: #3a3a3a;
-}
-
-/* Scrollbar */
-::-webkit-scrollbar {
-    width: 6px;
-}
-::-webkit-scrollbar-track {
-    background: #0f0f0f;
-}
-::-webkit-scrollbar-thumb {
-    background: #2a2a2a;
-    border-radius: 10px;
-}
-::-webkit-scrollbar-thumb:hover {
-    background: #b31b1b;
-}
-
-/* Responsivo */
-@media (max-width: 768px) {
-    #app {
-        flex-direction: column;
-        height: 100vh;
-        max-height: 100vh;
-        border-radius: 0;
-    }
-    .server-bar {
-        width: 100%;
-        height: 60px;
-        flex-direction: row;
-        padding: 4px 12px;
-        border-right: none;
-        border-bottom: 1px solid #2a2a2a;
-        overflow-x: auto;
-    }
-    .channels {
-        width: 100%;
-        height: auto;
-        padding: 12px;
-        border-right: none;
-        border-bottom: 1px solid #2a2a2a;
-        flex-shrink: 0;
-    }
-    .channel-category {
-        margin-top: 8px;
-    }
-    .modal-content {
-        width: 100%;
-        max-height: 100vh;
-        border-radius: 0;
-    }
-    .profile-decorations {
-        grid-template-columns: 1fr;
-    }
-    .call-users {
-        gap: 10px;
-    }
-    .call-user {
-        min-width: 60px;
-        padding: 4px;
-    }
-    .call-user .avatar {
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }
-}
